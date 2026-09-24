@@ -1,0 +1,20 @@
+{
+  "name": "regalloc-liveness-review",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "寄存器冲突谱：活跃区间、干涉图与溢出决策回放 — 离线审阅工作台",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "vite": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
