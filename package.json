@@ -1,0 +1,28 @@
+{
+  "name": "regalloc-review",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Offline register-allocation / liveness review workbench with replayable evidence archive",
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "test": "vitest",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}
