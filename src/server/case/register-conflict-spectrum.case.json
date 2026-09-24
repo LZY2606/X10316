@@ -1,0 +1,35 @@
+{
+  "caseId": "register-conflict-spectrum",
+  "title": "寄存器冲突谱：活跃区间、干涉图与溢出决策回放",
+  "summary": "后端工程组导入 SSA/虚拟寄存器指令、物理寄存器类与调用约定，审阅 liveness、interference、coalescing 与 spill 的完整离线案例。",
+  "units": {
+    "blockWeight": "exec（块执行频次，坐标基准：CFG 块）",
+    "spillCost": "cycle（store/load 代价 × 块权重^loopExponent）"
+  },
+  "parameters": {
+    "loopExponent": 2,
+    "maxIterations": 16,
+    "simplifyBudget": 2000,
+    "storeCost": "3 cycle",
+    "loadCost": "2 cycle"
+  },
+  "sources": {
+    "v1": "# 寄存器冲突谱 基线 v1：原指令顺序/def/use/CFG/寄存器类/预着色/clobber/move 全部保留\n# GPR 只有 3 个物理寄存器；调用 @foo clobber r0 r1；%retv 预着色 r0\nclass GPR { r0 r1 r2 }\nclass FPR { f0 f1 }\nprecolor %retv -> r0\nblock entry weight 1 exec\nblock loop weight 10 exec\nblock body weight 8 exec\nblock exit weight 1 exec\nedge entry -> loop\nedge loop -> body\nedge loop -> exit\nedge body -> loop\ninstr i1 @entry def %a:GPR op const\ninstr i2 @entry def %b:GPR op const\ninstr i3 @entry def %c:GPR use %a %b op add\ninstr i4 @entry call @foo clobber r0 r1\ninstr i5 @loop phi %p:GPR = [entry:%c, body:%s]\ninstr i6 @loop def %q:GPR use %p op add\ninstr i7 @loop br %q -> body exit\ninstr i8 @body def %s:GPR use %p %b op add\ninstr i9 @body move %f:FPR <- %s:GPR\ninstr i10 @body def %g:FPR use %f op fadd\ninstr i11 @exit def %retv:GPR use %a %q op add\ninstr i12 @exit ret %retv\n",
+    "v1_precolor": "# 局部源数据改动：新增两条预着色。%a 与 %b 都跨调用活跃且互相干涉，同钉 r0 构成语义无解。\nclass GPR { r0 r1 r2 }\nclass FPR { f0 f1 }\nprecolor %retv -> r0\nprecolor %a -> r0\nprecolor %b -> r0\nblock entry weight 1 exec\nblock loop weight 10 exec\nblock body weight 8 exec\nblock exit weight 1 exec\nedge entry -> loop\nedge loop -> body\nedge loop -> exit\nedge body -> loop\ninstr i1 @entry def %a:GPR op const\ninstr i2 @entry def %b:GPR op const\ninstr i3 @entry def %c:GPR use %a %b op add\ninstr i4 @entry call @foo clobber r0 r1\ninstr i5 @loop phi %p:GPR = [entry:%c, body:%s]\ninstr i6 @loop def %q:GPR use %p op add\ninstr i7 @loop br %q -> body exit\ninstr i8 @body def %s:GPR use %p %b op add\ninstr i9 @body move %f:FPR <- %s:GPR\ninstr i10 @body def %g:FPR use %f op fadd\ninstr i11 @exit def %retv:GPR use %a %q op add\ninstr i12 @exit ret %retv\n",
+    "v2_move": "# 第二分支：在 body 增加同类 move %m <- %s（%s 经 phi 边仍活跃，与 %m 干涉，coalescing 必须失败且保留 move）\nclass GPR { r0 r1 r2 }\nclass FPR { f0 f1 }\nprecolor %retv -> r0\nblock entry weight 1 exec\nblock loop weight 10 exec\nblock body weight 8 exec\nblock exit weight 1 exec\nedge entry -> loop\nedge loop -> body\nedge loop -> exit\nedge body -> loop\ninstr i1 @entry def %a:GPR op const\ninstr i2 @entry def %b:GPR op const\ninstr i3 @entry def %c:GPR use %a %b op add\ninstr i4 @entry call @foo clobber r0 r1\ninstr i5 @loop phi %p:GPR = [entry:%c, body:%s]\ninstr i6 @loop def %q:GPR use %p op add\ninstr i7 @loop br %q -> body exit\ninstr i8 @body def %s:GPR use %p %b op add\ninstr i9 @body move %f:FPR <- %s:GPR\ninstr i10 @body def %g:FPR use %f op fadd\ninstr i13 @body move %m:GPR <- %s:GPR\ninstr i14 @body def %n:GPR use %m %p op add\ninstr i11 @exit def %retv:GPR use %a %q %n op add\ninstr i12 @exit ret %retv\n",
+    "bad_weight": "# 单位不可转换探针：loop 权重使用未知单位 frob，原始表示必须保留并附诊断\nclass GPR { r0 r1 r2 }\nclass FPR { f0 f1 }\nprecolor %retv -> r0\nblock entry weight 1 exec\nblock loop weight 10 frob\nblock body weight 8 exec\nblock exit weight 1 exec\nedge entry -> loop\nedge loop -> body\nedge loop -> exit\nedge body -> loop\ninstr i1 @entry def %a:GPR op const\ninstr i2 @entry def %b:GPR op const\ninstr i3 @entry def %c:GPR use %a %b op add\ninstr i4 @entry call @foo clobber r0 r1\ninstr i5 @loop phi %p:GPR = [entry:%c, body:%s]\ninstr i6 @loop def %q:GPR use %p op add\ninstr i7 @loop br %q -> body exit\ninstr i8 @body def %s:GPR use %p %b op add\ninstr i9 @body move %f:FPR <- %s:GPR\ninstr i10 @body def %g:FPR use %f op fadd\ninstr i11 @exit def %retv:GPR use %a %q op add\ninstr i12 @exit ret %retv\n"
+  },
+  "script": [
+    { "op": "import", "branch": "main", "source": "v1" },
+    { "op": "compute", "branch": "main", "as": "c1" },
+    { "op": "revise_parameters", "branch": "main", "patch": { "loopExponent": 1 } },
+    { "op": "compute", "branch": "main", "as": "c2" },
+    { "op": "edit_source", "branch": "main", "source": "v1_precolor" },
+    { "op": "compute", "branch": "main", "as": "c3" },
+    { "op": "decide", "branch": "main", "on": "c2", "verdict": "accept", "rationale": "采纳：loopExponent=1 后循环块权重不再平方放大，溢出选择仍正确，作为评审基线接受。" },
+    { "op": "decide", "branch": "main", "on": "c2", "verdict": "reject", "rationale": "否定（互相冲突的人工决定）：下调 loopExponent 会低估循环内 spill 代价，要求恢复 2。" },
+    { "op": "fork", "branch": "phi-edge-check", "from": "c1" },
+    { "op": "edit_source", "branch": "phi-edge-check", "source": "v2_move" },
+    { "op": "compute", "branch": "phi-edge-check", "as": "c4" }
+  ]
+}
