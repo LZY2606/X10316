@@ -1,0 +1,26 @@
+{
+  "name": "regs-review",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "build": "vite build",
+    "preview": "tsx scripts/dev.ts",
+    "test": "vitest",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.21.2",
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

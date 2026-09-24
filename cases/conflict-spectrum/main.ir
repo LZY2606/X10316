@@ -1,0 +1,45 @@
+# Register Conflict Spectrum: live intervals, interference, spill replay
+# Coordinate basis: instruction index (1-based), natural-loop nesting depth.
+# Units: register widths declared in .class; spill weights are dimensionless.
+
+.class gpr "general purpose 32-bit" bit:32 = $t0 $t1 $t2
+.class fpr "float 64-bit" bit:64 = $f0 $f1
+
+# precolored virtual operands (calling-convention / ABI bindings)
+.precolor p:gpr = $t0
+.precolor q:gpr = $t0
+
+# call clobbers $t0,$t1 (caller-saved), float call clobbers $f0
+.convention call:g "g-call ABI" clobbers $t0 $t1
+.convention call:h "h-call ABI" clobbers $f0
+
+.entry entry
+
+entry:
+  i1 move  a:gpr = p:gpr
+  i2 move  x:fpr = k:fpr
+  i3 move  b:gpr = k:fpr
+  i4 def   c:gpr =
+  i5 def   d:gpr =
+  i6 def   e:gpr =
+  i7 use   c:gpr, d:gpr, e:gpr
+  i8 call  call:g a:gpr
+  i9 use   a:gpr, c:gpr, d:gpr, e:gpr
+  i10 br   header exit
+
+header:
+  i11 phi  h:gpr = [a:gpr from entry] [t:gpr from latch]
+  i12 use  h:gpr, p:gpr
+  i13 move t:gpr = h:gpr
+  i14 use  h:gpr, q:gpr
+  i15 br   latch exit
+
+latch:
+  i16 use  t:gpr
+  i17 jmp  header
+
+exit:
+  i18 use  h:gpr
+  i19 call call:h x:fpr
+  i20 use  x:fpr, b:gpr
+  i21 ret  h:gpr
