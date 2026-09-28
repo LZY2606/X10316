@@ -1,0 +1,23 @@
+{
+  "name": "ra-liveness-review",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline register-allocation liveness/interference/coalescing/spill review workbench",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server/main.ts",
+    "start": "tsx src/server/main.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "~5.9.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  }
+}
